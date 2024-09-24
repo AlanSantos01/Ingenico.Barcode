@@ -1,3 +1,6 @@
+# See https://aka.ms/customizecontainer to learn how to customize your debug container 
+# and how Visual Studio uses this Dockerfile to build your images for faster debugging.
+
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 8080
@@ -11,9 +14,12 @@ COPY ["src/Ingenico.Barcode.Data/Ingenico.Barcode.Data.csproj", "src/Ingenico.Ba
 COPY ["src/Ingenico.Barcode.Domain/Ingenico.Barcode.Domain.csproj", "src/Ingenico.Barcode.Domain/"]
 COPY ["src/Ingenico.Barcode.Shared/Ingenico.Barcode.Shared.csproj", "src/Ingenico.Barcode.Shared/"]
 COPY ["src/Ingenico.Barcode.IoC/Ingenico.Barcode.IoC.csproj", "src/Ingenico.Barcode.IoC/"]
-RUN dotnet restore "./src/Ingenico.Barcode.API/Ingenico.Barcode.API.csproj" --no-cache
+
+# Fix the path and use --disable-parallel for restore
+RUN dotnet restore "Ingenico.Barcode.API.csproj" --disable-parallel
+
 COPY . .
-WORKDIR "/src/Ingenico.Barcode.API"
+WORKDIR "/src/src/Ingenico.Barcode.API"
 RUN dotnet build "./Ingenico.Barcode.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
@@ -23,5 +29,8 @@ RUN dotnet publish "./Ingenico.Barcode.API.csproj" -c $BUILD_CONFIGURATION -o /a
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# Use USER app after the build and publish steps
 USER app
+
 ENTRYPOINT ["dotnet", "Ingenico.Barcode.API.dll"]
