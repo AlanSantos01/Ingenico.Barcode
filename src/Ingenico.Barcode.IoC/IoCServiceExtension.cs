@@ -14,6 +14,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using MySqlConnector;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Ingenico.Barcode.IoC
 
@@ -77,16 +79,17 @@ namespace Ingenico.Barcode.IoC
             }
         }
 
-        private static void ConfigureDbContext(IServiceCollection services, IConfiguration configuration)
-        {
+        private static void ConfigureDbContext(IServiceCollection services, IConfiguration configuration) {
+            // Configurar o DbContext para usar MySQL com Pomelo
             services.AddDbContext<ApplicationDbContext>((sp, options) =>
             {
-                //options.UseSqlite(configuration.GetConnectionString("DefaultConnection"));
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"));
+                var connectionString = configuration.GetConnectionString("DefaultConnection");
+                options.UseMySql(connectionString, new MySqlServerVersion(new Version(9, 0))); // Atualize a versão conforme necessário
             });
 
             services.AddScoped<ApplicationDbContextInitialiser>();
         }
+
 
         private static void ConfigureJWT(IServiceCollection services, IConfiguration configuration) {
             services.AddIdentity<IdentityUser, IdentityRole>()
